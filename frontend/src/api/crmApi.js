@@ -3,7 +3,7 @@ const API_BASE = url.endsWith('/api') ? url : `${url}/api`;
 
 export const crmApi = {
   /**
-   * Fetch all leads from the backend
+   * Fetch all leads from the active database (Google Sheets or JSON)
    */
   async getLeads() {
     const res = await fetch(`${API_BASE}/leads`);
@@ -12,7 +12,7 @@ export const crmApi = {
   },
 
   /**
-   * Update lead properties (status, phone, source, followUpDate)
+   * Update lead properties (status, phone, source, followUpDate, notes)
    */
   async updateLead(id, data) {
     const res = await fetch(`${API_BASE}/leads/${id}`, {
@@ -47,5 +47,21 @@ export const crmApi = {
     const res = await fetch(`${API_BASE}/notifications`);
     if (!res.ok) throw new Error('Failed to fetch notifications');
     return res.json();
+  },
+
+  /**
+   * Dispatch an outgoing WhatsApp message to a lead
+   */
+  async sendWhatsApp(id, message) {
+    const res = await fetch(`${API_BASE}/leads/${id}/message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to dispatch WhatsApp message');
+    }
+    return data;
   }
 };

@@ -72,10 +72,15 @@ export default function LeadCard({ lead, onEdit }) {
           </span>
         </div>
 
-        {/* Lead Phone Number */}
-        <div className="flex items-center gap-2 text-slate-700">
-          <Phone className="w-4 h-4 text-slate-400 group-hover:text-crm-500 transition-colors" />
-          <span className="font-semibold text-sm tracking-wide">{lead.phone}</span>
+        {/* Contact Name & Phone */}
+        <div className="space-y-1">
+          <h4 className="font-bold text-sm text-slate-800 tracking-tight leading-tight group-hover:text-crm-700 transition-colors">
+            {lead.name || 'Contact'}
+          </h4>
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+            <Phone className="w-3 h-3 text-slate-400" />
+            <span className="tracking-wide">{lead.phone}</span>
+          </div>
         </div>
 
         {/* Follow Up Date Badge */}

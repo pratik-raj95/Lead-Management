@@ -12,11 +12,11 @@ CRM/
 │   ├── public/                 # Static asset directories
 │   ├── src/                    # React source root
 │   │   ├── api/
-│   │   │   └── crmApi.js       # Client client library (fetch-based)
+│   │   │   └── crmApi.js       # Client client library (fetch-based with WhatsApp outbox)
 │   │   ├── components/
 │   │   │   ├── KanbanBoard.jsx # Kanban pipeline grid controller
-│   │   │   ├── LeadCard.jsx    # Lead card component with HTML5 drag
-│   │   │   └── LeadModal.jsx   # Details viewer and date editor modal
+│   │   │   ├── LeadCard.jsx    # Lead card component showing Name & Phone
+│   │   │   └── LeadModal.jsx   # Two-column modal (Form, Timeline log, WhatsApp Outbox)
 │   │   ├── hooks/
 │   │   │   └── useLeads.js     # Global state engine, polling, & optimistic UI updates
 │   │   ├── pages/
@@ -30,7 +30,7 @@ CRM/
 │   ├── .env                    # Local environment config (VITE_API_URL)
 │   ├── .env.example            # Environment variables template
 │   ├── .gitignore              # Client specific git exclude rules
-│   ├── index.html              # Core Vite markup page template
+│   ├── index.html              # Core Vite HTML document wrapper
 │   ├── package.json            # Client package dependencies
 │   ├── postcss.config.js       # Styles postprocessor config
 │   ├── tailwind.config.js      # Utility-first styles configuration
@@ -39,17 +39,20 @@ CRM/
 │
 ├── backend/                    # Server-Side Application (Express.js API Node)
 │   ├── controllers/            # Route business logic handlers
-│   │   └── leadController.js   # Controllers for GET, PUT, & webhook triggers
+│   │   └── leadController.js   # Lead, Meta verification, WhatsAppCloud hooks, & Google Ads webhook
 │   ├── data/                   # Database files
-│   │   └── db.json             # Cached file database
+│   │   └── db.json             # Backup fallback local JSON database
 │   ├── middleware/             # Express mid-route filters
 │   │   └── logger.js           # Logger middleware
 │   ├── routes/                 # Endpoint path routing configuration
 │   │   └── apiRoutes.js        # Express paths mapping
+│   ├── services/               # Integrations API services
+│   │   ├── metaService.js      # Meta Graph API fetch service
+│   │   └── whatsappService.js  # WhatsApp Cloud API messaging service
 │   ├── utils/                  # Backend utilities (placeholder)
 │   ├── .env.example            # Backend env template (PORT)
 │   ├── .gitignore              # Server specific git exclude rules
-│   ├── db.js                   # Node JSON database file reader/writer
+│   ├── db.js                   # Google Sheets auth JWT manager
 │   ├── package.json            # Server package dependencies
 │   ├── render.yaml             # Render deployment configuration parameters
 │   └── server.js               # Express application listener startup
@@ -60,7 +63,9 @@ CRM/
 │   ├── backend_src/            # Pre-refactoring backend server files
 │   └── ...
 │
+├── .env.example                # Root environment variables template
 ├── .gitignore                  # Root Git ignore rules
+├── DEPLOYMENT_CHECKLIST.md     # Pre-flight deployment checklist
 ├── DEPLOYMENT_GUIDE.md         # Multi-platform deployment handbook
 ├── PROJECT_STRUCTURE.md        # Folder structure documentation (this file)
 └── README.md                   # CRM user manual & installation guide
@@ -77,6 +82,7 @@ CRM/
    const API_BASE = url.endsWith('/api') ? url : `${url}/api`;
    ```
 3. **Data Flow**:
-   - Webhook calls (Meta Ads, Google Ads, WhatsApp Business) hit the backend `/api/webhook` route.
-   - The backend controller (`backend/controllers/leadController.js`) stores the lead in `backend/data/db.json` and updates the in-memory database instance.
-   - The frontend's `useLeads` hook automatically queries `/api/leads` on a 4-second polling timer, causing any new webhook-created leads to appear in the dashboard and Kanban board instantaneously.
+   - Webhook calls (Meta Ads, Google Ads, WhatsApp Business) hit the backend `/api/webhook/meta`, `/api/webhook/google`, `/api/webhook/whatsapp`.
+   - The backend controllers process the payloads and store data inside **Google Sheets** (or local JSON backup if sheets are unconfigured).
+   - If a duplicate lead phone number arrives, the CRM updates the row and appends to the Notes timeline, preventing duplicates.
+   - The frontend's `useLeads` hook automatically queries `/api/leads` on a 4-second polling timer, causing any new webhook-created leads to appear in the dashboard and Kanban board.

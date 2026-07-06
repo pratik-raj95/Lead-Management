@@ -1,6 +1,6 @@
 # API Documentation
 
-This document outlines the API endpoints exposed by the Antigravity CRM Express.js backend.
+This document outlines the API endpoints exposed by the Express.js backend.
 
 ## Base URL
 By default, the backend runs locally on port `5000`:
@@ -10,159 +10,100 @@ http://localhost:5000/api
 
 ---
 
-## Endpoints
+## 1. CRM Core Endpoints
 
-### 1. Get All Leads
-Fetch the entire list of leads stored in the database.
-
+### Get All Leads
+Fetch the list of leads from Google Sheets (or fallback local JSON).
 - **URL**: `/leads`
 - **Method**: `GET`
-- **Auth Required**: None
 - **Success Response (200 OK)**:
   ```json
   [
     {
       "id": "lead_1",
+      "name": "John Doe",
       "phone": "9876543210",
       "source": "meta_ads",
       "status": "New Leads",
       "createdDate": "2026-06-30T18:22:05.890Z",
-      "followUpDate": null
-    },
-    {
-      "id": "lead_2",
-      "phone": "9988776655",
-      "source": "whatsapp",
-      "status": "Interested",
-      "createdDate": "2026-06-28T18:22:05.893Z",
-      "followUpDate": "2026-07-02"
+      "lastUpdated": "2026-07-06T12:00:00.000Z",
+      "notes": "[2026-07-04] Ingested via Meta Ads Webhook"
     }
   ]
   ```
-- **Error Response (500 Internal Server Error)**:
-  ```json
-  { "error": "Failed to retrieve leads" }
-  ```
-- **Example cURL**:
-  ```bash
-  curl -X GET http://localhost:5000/api/leads
-  ```
 
----
-
-### 2. Update Lead
-Update specific fields of an existing lead (such as changing its status column or assigning/updating follow-up dates).
-
+### Update Lead
+Update lead details (status stage, phone, name, follow-up date, notes).
 - **URL**: `/leads/:id`
 - **Method**: `PUT`
-- **URL Parameters**: `id` (The unique lead identifier)
 - **Request Body**:
   ```json
   {
-    "phone": "9988776655",
-    "source": "whatsapp",
-    "status": "Follow Up",
-    "followUpDate": "2026-07-04"
+    "name": "John Doe",
+    "phone": "9876543210",
+    "source": "meta_ads",
+    "status": "Interested",
+    "followUpDate": "2026-07-10"
   }
   ```
-- **Success Response (200 OK)**:
-  ```json
-  {
-    "id": "lead_2",
-    "phone": "9988776655",
-    "source": "whatsapp",
-    "status": "Follow Up",
-    "createdDate": "2026-06-28T18:22:05.893Z",
-    "followUpDate": "2026-07-04"
-  }
-  ```
-- **Error Responses**:
-  - **404 Not Found**:
-    ```json
-    { "error": "Lead not found" }
-    ```
-  - **500 Internal Server Error**:
-    ```json
-    { "error": "Failed to update lead" }
-    ```
-- **Example cURL**:
-  ```bash
-  curl -X PUT -H "Content-Type: application/json" -d "{\"phone\":\"9988776655\",\"source\":\"whatsapp\",\"status\":\"Follow Up\",\"followUpDate\":\"2026-07-04\"}" http://localhost:5000/api/leads/lead_2
-  ```
 
----
-
-### 3. Ingest Webhook (Meta, Google, WhatsApp)
-Webhook ingest endpoint used by third-party integrations (like n8n, Meta Graph API, Google Ads Webhook, etc.) to automatically create new leads.
-
+### Ingest Webhook (Unified)
+Webhook endpoint to create/update leads. Matches phone numbers to prevent duplicates.
 - **URL**: `/webhook`
 - **Method**: `POST`
 - **Request Body**:
   ```json
   {
-    "phone": "9112233445",
-    "source": "google_ads"
+    "phone": "9876543210",
+    "source": "meta_ads",
+    "name": "John Doe"
   }
-  ```
-  *Note:* `source` must be one of: `meta_ads`, `google_ads`, or `whatsapp`.
-- **Success Response (201 Created)**:
-  ```json
-  {
-    "success": true,
-    "message": "Lead created successfully",
-    "lead": {
-      "id": "lead_1783016554031_288",
-      "phone": "9112233445",
-      "source": "google_ads",
-      "status": "New Leads",
-      "createdDate": "2026-07-02T18:22:34.031Z",
-      "followUpDate": null
-    }
-  }
-  ```
-- **Error Responses**:
-  - **400 Bad Request**:
-    ```json
-    { "error": "Phone number is required" }
-    ```
-    or
-    ```json
-    { "error": "Invalid source. Must be one of: meta_ads, google_ads, whatsapp" }
-    ```
-  - **500 Internal Server Error**:
-    ```json
-    { "error": "Failed to ingest lead via webhook" }
-    ```
-- **Example cURL**:
-  ```bash
-  curl -X POST -H "Content-Type: application/json" -d "{\"phone\":\"9112233445\",\"source\":\"google_ads\"}" http://localhost:5000/api/webhook
   ```
 
 ---
 
-### 4. Get Today's Notifications
-Retrieve leads that have follow-up schedules matching today's date. Used by the dashboard warning system and daily cron workers.
+## 2. Platform Webhook integrations
 
-- **URL**: `/notifications`
+### Meta Webhook Handshake
+- **URL**: `/webhook/meta`
 - **Method**: `GET`
-- **Success Response (200 OK)**:
+- **Query Params**: `hub.mode=subscribe`, `hub.verify_token=crm_meta_token`, `hub.challenge=CHALLENGE_CODE`
+
+### Meta Webhook Ingest
+- **URL**: `/webhook/meta`
+- **Method**: `POST`
+
+### WhatsApp Webhook Handshake
+- **URL**: `/webhook/whatsapp`
+- **Method**: `GET`
+
+### WhatsApp Webhook Ingest
+- **URL**: `/webhook/whatsapp`
+- **Method**: `POST`
+
+### Google Ads Webhook Ingest
+- **URL**: `/webhook/google`
+- **Method**: `POST`
+- **Request Body**:
   ```json
-  [
-    {
-      "id": "lead_3",
-      "phone": "9123456789",
-      "source": "google_ads",
-      "status": "Follow Up",
-      "createdDate": "2026-06-27T18:22:05.893Z",
-      "followUpDate": "2026-07-04"
-    }
-  ]
+  {
+    "lead_id": "TeStLeAdId12345",
+    "google_key": "crm_google_key",
+    "user_column_data": [
+      {
+        "column_id": "PHONE_NUMBER",
+        "string_value": "+19876543210"
+      }
+    ]
+  }
   ```
-- **Error Response (500 Internal Server Error)**:
+
+### Send Outgoing WhatsApp Message
+- **URL**: `/leads/:id/message`
+- **Method**: `POST`
+- **Request Body**:
   ```json
-  { "error": "Failed to retrieve notifications" }
-  ```
-- **Example cURL**:
-  ```bash
-  curl -X GET http://localhost:5000/api/notifications
+  {
+    "message": "Hello from CRM!"
+  }
   ```
