@@ -1,0 +1,7 @@
+# Backend Git Ignore Rules
+node_modules
+logs
+.env
+.env.local
+npm-debug.log*
+data/db.json

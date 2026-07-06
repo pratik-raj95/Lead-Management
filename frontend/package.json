@@ -1,11 +1,10 @@
 {
-  "name": "crm",
+  "name": "crm-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "server": "node backend/server.js",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"

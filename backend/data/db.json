@@ -3,9 +3,9 @@
     "id": "lead_1",
     "phone": "9876543210",
     "source": "meta_ads",
-    "status": "New Leads",
+    "status": "Interested",
     "createdDate": "2026-06-30T18:22:05.890Z",
-    "followUpDate": null
+    "followUpDate": "2026-09-07"
   },
   {
     "id": "lead_2",
@@ -69,6 +69,70 @@
     "source": "google_ads",
     "status": "Follow Up",
     "createdDate": "2026-07-04T01:17:56.153Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_1783320082120_740",
+    "phone": "9812700898",
+    "source": "meta_ads",
+    "status": "New Leads",
+    "createdDate": "2026-07-06T06:41:22.121Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_1783321640038_907",
+    "phone": "9999620226",
+    "source": "google_ads",
+    "status": "New Leads",
+    "createdDate": "2026-07-06T07:07:20.039Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_1783321653350_44",
+    "phone": "9876806275",
+    "source": "whatsapp",
+    "status": "New Leads",
+    "createdDate": "2026-07-06T07:07:33.350Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_1783321656836_878",
+    "phone": "9123280970",
+    "source": "google_ads",
+    "status": "New Leads",
+    "createdDate": "2026-07-06T07:07:36.836Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_1783321659117_64",
+    "phone": "9876377716",
+    "source": "meta_ads",
+    "status": "New Leads",
+    "createdDate": "2026-07-06T07:07:39.118Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_1783321681738_766",
+    "phone": "9988529795",
+    "source": "meta_ads",
+    "status": "New Leads",
+    "createdDate": "2026-07-06T07:08:01.738Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_1783321687045_578",
+    "phone": "9876756292",
+    "source": "whatsapp",
+    "status": "New Leads",
+    "createdDate": "2026-07-06T07:08:07.045Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_1783321842169_235",
+    "phone": "9812700898",
+    "source": "meta_ads",
+    "status": "New Leads",
+    "createdDate": "2026-07-06T07:10:42.170Z",
     "followUpDate": null
   }
 ]

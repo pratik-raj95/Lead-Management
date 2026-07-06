@@ -1,4 +1,5 @@
-const API_BASE = 'http://localhost:5000/api';
+const url = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = url.endsWith('/api') ? url : `${url}/api`;
 
 export const crmApi = {
   /**
