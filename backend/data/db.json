@@ -1,0 +1,74 @@
+[
+  {
+    "id": "lead_1",
+    "phone": "9876543210",
+    "source": "meta_ads",
+    "status": "New Leads",
+    "createdDate": "2026-06-30T18:22:05.890Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_2",
+    "phone": "9988776655",
+    "source": "whatsapp",
+    "status": "Interested",
+    "createdDate": "2026-06-28T18:22:05.893Z",
+    "followUpDate": "2026-07-02"
+  },
+  {
+    "id": "lead_3",
+    "phone": "9123456789",
+    "source": "google_ads",
+    "status": "Not Interested",
+    "createdDate": "2026-06-27T18:22:05.893Z",
+    "followUpDate": "2026-07-04"
+  },
+  {
+    "id": "lead_4",
+    "phone": "9876123450",
+    "source": "meta_ads",
+    "status": "Not Interested",
+    "createdDate": "2026-06-22T18:22:05.893Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_1783016544121_291",
+    "phone": "1234567890",
+    "source": "meta_ads",
+    "status": "New Leads",
+    "createdDate": "2026-07-02T18:22:24.121Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_1783016554031_288",
+    "phone": "9999999999",
+    "source": "google_ads",
+    "status": "New Leads",
+    "createdDate": "2026-07-02T18:22:34.031Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_1783127865823_337",
+    "phone": "9988111503",
+    "source": "meta_ads",
+    "status": "New Leads",
+    "createdDate": "2026-07-04T01:17:45.823Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_1783127873353_712",
+    "phone": "9123133662",
+    "source": "google_ads",
+    "status": "Follow Up",
+    "createdDate": "2026-07-04T01:17:53.353Z",
+    "followUpDate": null
+  },
+  {
+    "id": "lead_1783127876152_594",
+    "phone": "9876686193",
+    "source": "google_ads",
+    "status": "Follow Up",
+    "createdDate": "2026-07-04T01:17:56.153Z",
+    "followUpDate": null
+  }
+]
