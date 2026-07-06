@@ -51,3 +51,7 @@ Vercel is the recommended platform for hosting compiled React frontends.
    - **Key**: `VITE_API_URL`
    - **Value**: `https://crm-backend-service.onrender.com` (Your live backend URL from Render)
 6. Click **Deploy**.
+
+> [!WARNING]
+> **Vite Command Not Found Error:** If you get `sh: vite: command not found` during the build step, it means Vercel is executing commands in the root of the repository instead of the `frontend` folder. 
+> To fix this, ensure that the **Root Directory** is explicitly set to `frontend` in the Vercel Dashboard project settings. We have also provided a root-level `vercel.json` file that delegates the dependencies installation (`npm install --prefix frontend`) and builds automatically from the root if you leave the import settings at default.
