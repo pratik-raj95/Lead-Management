@@ -403,6 +403,58 @@ class DatabaseManager {
     }
     return null;
   }
+
+  /**
+   * Delete a lead from the active database
+   */
+  async deleteLead(id) {
+    if (!this.useSheets) {
+      return this.deleteLeadLocalFallback(id);
+    }
+
+    try {
+      const leads = await this.getLeads();
+      const existing = leads.find(l => l.id === id);
+
+      if (existing) {
+        // Delete row in Google Sheets via batchUpdate
+        const request = {
+          spreadsheetId: this.sheetId,
+          resource: {
+            requests: [
+              {
+                deleteDimension: {
+                  range: {
+                    sheetId: 0, // Default Sheet1 index ID
+                    dimension: 'ROWS',
+                    startIndex: existing.rowIndex - 1, // 0-indexed start
+                    endIndex: existing.rowIndex // 0-indexed end
+                  }
+                }
+              }
+            ]
+          }
+        };
+        await this.sheetsClient.spreadsheets.batchUpdate(request);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('[Database Error] Failed to delete lead from Sheet:', err.message);
+      return this.deleteLeadLocalFallback(id);
+    }
+  }
+
+  deleteLeadLocalFallback(id) {
+    this.loadLocal();
+    const idx = this.localLeads.findIndex(l => l.id === id);
+    if (idx !== -1) {
+      this.localLeads.splice(idx, 1);
+      this.saveLocal();
+      return true;
+    }
+    return false;
+  }
 }
 
 export const db = new DatabaseManager();

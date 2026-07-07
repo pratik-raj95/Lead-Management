@@ -87,9 +87,11 @@
     "id": "lead_1783321640038_907",
     "phone": "9999620226",
     "source": "google_ads",
-    "status": "New Leads",
+    "status": "Follow Up",
     "createdDate": "2026-07-06T07:07:20.039Z",
-    "followUpDate": null
+    "followUpDate": "2026-07-07",
+    "name": "Contact",
+    "lastUpdated": "2026-07-07T07:02:49.404Z"
   },
   {
     "id": "lead_1783321653350_44",
@@ -149,5 +151,27 @@
     "followUpDate": null,
     "lastUpdated": "2026-07-06T10:53:00.708Z",
     "notes": "[2026-07-06T10:53:00.708Z] Ingested from meta_ads"
+  },
+  {
+    "id": "lead_1783404444725_852",
+    "name": "Contact",
+    "phone": "9812769706",
+    "source": "google_ads",
+    "status": "New Leads",
+    "createdDate": "2026-07-07T06:07:24.723Z",
+    "followUpDate": null,
+    "lastUpdated": "2026-07-07T06:07:24.723Z",
+    "notes": "[2026-07-07T06:07:24.723Z] Ingested from google_ads"
+  },
+  {
+    "id": "lead_1783408815183_982",
+    "name": "Contact",
+    "phone": "9988343209",
+    "source": "whatsapp",
+    "status": "New Leads",
+    "createdDate": "2026-07-07T07:20:15.181Z",
+    "followUpDate": null,
+    "lastUpdated": "2026-07-07T07:20:15.181Z",
+    "notes": "[2026-07-07T07:20:15.181Z] Ingested from whatsapp"
   }
 ]

@@ -6,9 +6,31 @@ import apiRoutes from './routes/apiRoutes.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enable CORS with configurable origins for production safety
+// Enable CORS with dynamic origin matching for development and production safety
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://lead-management-crm.netlify.app'
+];
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, webhook alerts, or curl)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in whitelist or CORS_ORIGIN is set to '*'
+    const envOrigin = process.env.CORS_ORIGIN;
+    if (allowedOrigins.indexOf(origin) !== -1 || envOrigin === '*' || !envOrigin) {
+      return callback(null, true);
+    }
+    
+    // Check for exact environment match
+    if (origin === envOrigin) {
+      return callback(null, true);
+    }
+    
+    return callback(new Error(`Origin ${origin} not allowed by CORS`));
+  },
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));

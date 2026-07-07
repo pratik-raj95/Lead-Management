@@ -68,12 +68,29 @@ export function useLeads() {
     }
   };
 
+  /**
+   * Deletes a lead from the server and updates local state optimistically.
+   */
+  const deleteLead = async (leadId) => {
+    const previousLeads = [...leads];
+    setLeads(prev => prev.filter(l => l.id !== leadId));
+
+    try {
+      await crmApi.deleteLead(leadId);
+    } catch (err) {
+      console.error('Failed to delete lead on server:', err);
+      setLeads(previousLeads);
+      throw err;
+    }
+  };
+
   return {
     leads,
     loading,
     error,
     refreshLeads: fetchLeads,
     updateLeadStatus,
-    updateLeadDetails
+    updateLeadDetails,
+    deleteLead
   };
 }

@@ -3,7 +3,7 @@ import { X, Calendar, Phone, Check, RefreshCw, MessageSquare, Send, User, Clock,
 import { formatDateTime } from '../utils/dateFormatter';
 import { crmApi } from '../api/crmApi';
 
-export default function LeadModal({ lead, isOpen, onClose, onSave }) {
+export default function LeadModal({ lead, isOpen, onClose, onSave, onDelete }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [source, setSource] = useState('meta_ads');
@@ -188,22 +188,47 @@ export default function LeadModal({ lead, isOpen, onClose, onSave }) {
             </div>
 
             {/* Save Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-100 mt-6">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50 border border-slate-200 rounded-xl transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-crm-600 hover:bg-crm-700 disabled:bg-crm-400 rounded-xl shadow-md shadow-crm-600/10 transition-all"
-              >
-                {submitting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                Save Changes
-              </button>
+            <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-6 gap-2 w-full">
+              {onDelete ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (window.confirm('Are you sure you want to delete this lead?')) {
+                      setSubmitting(true);
+                      try {
+                        await onDelete(lead.id);
+                        onClose();
+                      } catch (err) {
+                        setError('Failed to delete lead.');
+                      } finally {
+                        setSubmitting(false);
+                      }
+                    }
+                  }}
+                  disabled={submitting}
+                  className="px-3.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-all"
+                >
+                  Delete Lead
+                </button>
+              ) : <div />}
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50 border border-slate-200 rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-crm-600 hover:bg-crm-700 disabled:bg-crm-400 rounded-xl shadow-md shadow-crm-600/10 transition-all"
+                >
+                  {submitting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  Save Changes
+                </button>
+              </div>
             </div>
           </form>
 

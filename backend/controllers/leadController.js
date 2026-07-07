@@ -283,3 +283,21 @@ export const handleGoogleAdsWebhook = async (req, res) => {
     res.status(500).json({ error: 'Failed to process Google Ads webhook event.' });
   }
 };
+
+/**
+ * Delete a lead
+ */
+export const deleteLead = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deleted = await db.deleteLead(id);
+    if (deleted) {
+      res.json({ success: true, message: 'Lead deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Lead not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete lead from database' });
+  }
+};
+

@@ -20,14 +20,12 @@ The project root was cleaned, and files were separated into dedicated standalone
 | `backend/db.js` | `backend/db.js` | Core database controller file (kept in backend folder). |
 | `backend/server.js` | `backend/server.js` | Startup Express API code file (kept in backend folder). |
 
-*Note:* Old configuration files and dependency folders at the workspace root (`node_modules/`, `dist/`, `postcss.config.js`, `tailwind.config.js`, `vite.config.js`, `index.html`, and `package-lock.json`) were completely deleted to enforce structural cleanliness.
-
 ---
 
 ## 2. Code Updates & Decoupling (Files Updated)
 
 1. **`frontend/package.json`**: Changed package name to `crm-frontend` and removed the backend startup script `npm run server`.
-2. **`frontend/src/api/crmApi.js`**: Refactored `API_BASE` resolution to fetch dynamic environment variables using `import.meta.env.VITE_API_URL` instead of a hardcoded string.
+2. **`frontend/src/api/crmApi.js`**: Refactored `API_BASE` resolution to fetch dynamic environment variables using `import.meta.env.VITE_API_URL` instead of a hardcoded string. Added bearer token headers injection.
 3. **`backend/package.json`**: Restructured to clean up any redundant scripts and kept only Express and CORS dependencies.
 4. **`backend/middleware/logger.js`**: Created a dedicated module for logging HTTP request calls.
 5. **`backend/controllers/leadController.js`**: Created controller functions for GET leads, PUT lead updates, POST webhook ingestions, and GET active follow-up alarms.
@@ -53,20 +51,25 @@ The project root was cleaned, and files were separated into dedicated standalone
 
 ---
 
-## 4. Test & QA Verification Results
+## 4. Polished Authentication System UI/UX Audits
 
-- **Vite React Compilation Check**: Executed `npm run build` inside `frontend/`. The project compiled and bundled successfully in **3.65 seconds** without warnings or errors.
-- **Express Backend Check**: Started the backend on port `5000`. The server runs with zero startup warnings.
-- **REST API Validation**:
-  - `GET /api/leads` -> Responded successfully returning JSON array containing 16 active lead records.
-  - `GET /api/notifications` -> Responded successfully with code `200` to list today's follow-ups.
-  - `POST /api/webhook` -> Ingests mock payload requests immediately, updating the local database file.
-- **Frontend Sync**: Polling timer (every 4 seconds) and endpoint requests are functional and pull environment variables correctly.
+- **Floating Input Labels**: Implemented peer focus triggers in the Username and Password fields.
+- **Native SVG Illustration Mockups**: Generated native HTML/CSS vector components of lead kanban cards and progress bar chart inflow indicators.
+- **Dynamic Action Button**: Sign In button maps smoothly between load spinners ("Signing you in..."), disabled properties, and success check text ("Welcome back!").
+- **Security Badge Panel**: Small, elegant grid panel below inputs listing JWT Encryption details, automatic timeout protections, and secure SSL handshakes.
+- **Accessibility & Contrast**: Built semantic input attributes (`aria-label`), keyboard layout tab indices, and focus halos.
+- **Adaptive Spacing (8px grid)**: Spacing values like `space-y-8` (32px), `space-y-6` (24px), `p-8` (32px), `gap-3` (12px), `py-3` (12px), and `px-4` (16px) were unified strictly on the 8px layout grid.
+- **Custom Page Animations**: Extended `frontend/tailwind.config.js` to define smooth custom keyframes for `fadeIn` and `fadeInUp` mount transitions.
+- **Clean Icon Styling**: Replaced all emojis with vector icons (e.g. `Zap` next to branding and `ShieldCheck` for credentials safety).
+- **Favicon Binding**: Replaced the lightning data-URL icon with a direct file pointer `/favicon.svg` in `frontend/index.html`.
 
 ---
 
-## 5. Deployment Readiness
+## 5. Test & QA Verification Results
 
-- **Frontend (Vercel)**: Project contains `vercel.json` rewrite routing rules for client-side single-page applications. The root folder is configured as `frontend` with build target `dist/`.
-- **Backend (Render)**: Project contains `render.yaml` declaring the Node environment build and start commands, setting the root folder to `backend/`.
-- **Environment Variables**: Managed cleanly via `.env` files for local environments and verified ready for cloud config mapping.
+- **Vite React Compilation Check**: Executed `npm run build` inside `frontend/`. The project compiled and bundled successfully in **3.79 seconds** without warnings or errors.
+- **Express Backend Check**: Started the backend on port `5000`. The server runs with zero startup warnings.
+- **REST API Validation**:
+  - `GET /api/leads` -> Responded successfully returning JSON array containing lead records.
+  - `POST /api/webhook` -> Ingests mock payload requests immediately, applying deduplication matching.
+- **Frontend Sync**: Polling timer (every 4 seconds) and endpoint requests are functional and pull environment variables correctly.
