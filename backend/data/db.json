@@ -35,9 +35,11 @@
     "id": "lead_1783016544121_291",
     "phone": "1234567890",
     "source": "meta_ads",
-    "status": "New Leads",
+    "status": "Follow Up",
     "createdDate": "2026-07-02T18:22:24.121Z",
-    "followUpDate": null
+    "followUpDate": "2026-07-06",
+    "name": "Contact",
+    "lastUpdated": "2026-07-06T10:53:21.815Z"
   },
   {
     "id": "lead_1783016554031_288",
@@ -136,5 +138,16 @@
     "status": "New Leads",
     "createdDate": "2026-07-06T07:10:42.170Z",
     "followUpDate": null
+  },
+  {
+    "id": "lead_1783335180710_774",
+    "name": "Contact",
+    "phone": "9123984502",
+    "source": "meta_ads",
+    "status": "New Leads",
+    "createdDate": "2026-07-06T10:53:00.708Z",
+    "followUpDate": null,
+    "lastUpdated": "2026-07-06T10:53:00.708Z",
+    "notes": "[2026-07-06T10:53:00.708Z] Ingested from meta_ads"
   }
 ]
