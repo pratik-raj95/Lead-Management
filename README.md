@@ -1,13 +1,13 @@
-# Antigravity CRM | Webhook-Driven Lead Management System
+# LeadFlow CRM | Webhook-Driven Lead Management System
 
-Antigravity CRM is a lightweight, high-performance, and responsive lead pipeline manager designed specifically for businesses running online marketing campaigns. It aggregates inbound lead events from Meta Ads, Google Ads, and WhatsApp into a central Kanban pipeline, protected by a secure Admin Authentication system.
+LeadFlow CRM is a decoupled, high-performance, and responsive lead pipeline manager designed specifically for businesses running online marketing campaigns. It aggregates inbound lead events from Meta Ads, Google Ads, and WhatsApp into a central Kanban pipeline, protected by a secure Admin Authentication system.
 
 ---
 
 ## 1. Project Overview
-Antigravity CRM is refactored into a decoupled, two-tier architecture:
+LeadFlow CRM uses a decoupled, two-tier architecture:
 - **Frontend**: A client-side React single-page app built with Vite, styled with Tailwind CSS, and protected by a premium Login card.
-- **Backend**: A standalone Node.js and Express.js REST API that connects to Google Sheets (or fallback local JSON), secures endpoints with JWT validation, and ingests third-party webhooks.
+- **Backend**: A standalone Node.js and Express.js REST API that connects to Google Sheets (or fallback local JSON), secures core endpoints with JWT validation, and ingests third-party webhooks.
 
 ---
 
@@ -23,44 +23,59 @@ CRM/
 │   └── ...
 │
 ├── backend/                  # REST API server app (Express.js)
-│   ├── controllers/          # Business logic endpoint controllers (Leads & Auth)
+│   ├── config/               # Google Sheets configuration properties
+│   ├── controllers/          # Business logic controllers (Leads, Timeline, Auth)
 │   ├── routes/               # Express routing tables
 │   ├── middleware/           # Request logging & JWT validation filters
-│   ├── services/             # Integrations (Meta Graph, WhatsApp Cloud)
+│   ├── services/             # Google Sheets DB client, Meta Ads & WhatsApp dispatchers
+│   ├── data/                 # Local JSON database fallback
 │   ├── .env.example          # Server environment template
-│   ├── package.json          # Express-only dependencies (including bcryptjs)
+│   ├── package.json          # Express-only dependencies
 │   └── ...
 │
-├── README.md                 # User instructions (this file)
+├── README.md                 # CRM introduction (this file)
 ├── LOGIN_SETUP.md            # Authentication setup handbook
 ├── CLIENT_SETUP_GUIDE.md     # Client API keys configuration guide
-└── DEPLOYMENT_CHECKLIST.md   # Pre-flight deployment checklist
+├── GOOGLE_SHEETS_SETUP.md    # Google Sheets setup & column layout specifications
+├── LEAD_HISTORY.md           # Lead History & Activity Timeline logging rules
+└── API_DOCUMENTATION.md      # REST API endpoints mapping table
 ```
 
 ---
 
-## 3. Technologies Used
-- **Frontend**: React.js (Vite), Tailwind CSS v3, Lucide React (Icons).
-- **Backend**: Node.js, Express.js, JSON Web Tokens (`jsonwebtoken`), password hashing (`bcryptjs`), Google APIs client (`googleapis`).
-- **Database**: Google Sheets API integration (falls back to local JSON on credential absence).
+## 3. Database Architecture (Google Sheets & Local Fallback)
+
+The CRM utilizes **Google Sheets** as its primary database.
+* **Sheet 1 (`Sheet1`)**: Houses active contact records, sources, and pipeline stages.
+* **Sheet 2 (`Sheet2`)**: Houses a chronological transaction ledger capturing lead activities (creations, drag-and-drop moves, updates, merged duplicates, and outgoing WhatsApp messages).
+
+### Fallback Database:
+If Google credentials are not set, the API automatically falls back to local storage:
+- Leads are cached in `backend/data/db.json`
+- Activities are cached in `backend/data/activity_db.json`
 
 ---
 
-## 4. Admin Authentication
+## 4. Duplicate Prevention
 
-The CRM includes a secure, production-ready Admin Authentication System:
-* **Default Admin Username**: `admin`
-* **Default Admin Password**: `Admin@123`
-* **Session Persistence**: Secured via JWT session tokens cached in `sessionStorage` (which persists across browser refreshes but is immediately cleared on tab close, fulfilling "No localStorage dependency").
-* **Enterprise Auto Logout**: The client tracks interactions (mouse moves, clicks, scrolls, keyboard inputs, and screen touches). If a user is inactive for **30 minutes**, the CRM automatically terminates the session, clears all tokens, and redirects the user to the Login page.
-
-To learn how to customize admin credentials, secret keys, and JWT scopes, review [LOGIN_SETUP.md](file:///c:/Users/prati/OneDrive/Desktop/CRM/LOGIN_SETUP.md).
+The database enforces unique phone numbers:
+* **Duplicate Merged**: If a webhook receives a lead whose phone number already exists, the CRM **updates** the existing row (adding new notes and updates sources) instead of inserting a duplicate row, and logs a `Duplicate Merged` activity to the timeline.
 
 ---
 
-## 5. Installation & Run Steps
+## 5. Security & Authentication
 
-Clone or extract this project, then install dependencies for both applications:
+The CRM includes a secure Admin Authentication System:
+* **Default Credentials**: Username `admin`, Password `Admin@123`
+* **Session Persistence**: Secured via JWT session tokens cached in `sessionStorage` (cleared on tab close).
+* **Enterprise Auto Logout**: Clears tokens and redirects if inactive for **30 minutes**.
+* **Protected Routes**: Secure endpoints (getting leads, updating card details, deleting leads, sending messages, and fetching activity timelines) require a valid token header. Webhooks remain public.
+
+---
+
+## 6. Installation & Run Steps
+
+Install dependencies for both folders:
 
 ```bash
 # 1. Install frontend React dependencies
@@ -79,7 +94,7 @@ cd ..
 cd backend
 npm start
 ```
-*Note: The server uses a fail-fast port collision check. If port 5000 is occupied, it logs a warning and exits, avoiding silently changing ports which would break webhook payloads.*
+*Note: The server uses a fail-fast port collision check.*
 
 ### Start the Frontend Dev Server (Port 5173)
 ```bash
@@ -87,21 +102,3 @@ cd frontend
 npm run dev
 ```
 Open `http://localhost:5173/` in your browser.
-
----
-
-## 6. API Endpoints
-
-### Public Endpoints (Integration Webhooks)
-- **`POST /api/login`**: Authenticate administrator credentials and retrieve JWT.
-- **`POST /api/webhook`**: Unified webhook endpoint to create leads.
-- **`GET/POST /api/webhook/meta`**: Meta Ads webhook subscription & lead verification.
-- **`GET/POST /api/webhook/whatsapp`**: WhatsApp Cloud API verification & inbound message capture.
-- **`POST /api/webhook/google`**: Google Ads Conversion form ingestion.
-
-### Protected Endpoints (Requires `Authorization: Bearer <JWT>`)
-- **`GET /api/leads`**: Retrieve all leads.
-- **`PUT /api/leads/:id`**: Update a lead's stage or follow-up details.
-- **`DELETE /api/leads/:id`**: Delete a lead.
-- **`GET /api/notifications`**: Retrieve leads requiring follow-up today.
-- **`POST /api/leads/:id/message`**: Send outbound WhatsApp template message to a lead.

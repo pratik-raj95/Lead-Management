@@ -138,5 +138,21 @@ export const crmApi = {
       throw new Error(data.error || 'Failed to dispatch WhatsApp message');
     }
     return data;
+  },
+
+  /**
+   * Fetch lead activity history timeline
+   */
+  async getLeadTimeline(id) {
+    const res = await fetch(`${API_BASE}/leads/${id}/timeline`, {
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        sessionStorage.removeItem('crm_token');
+      }
+      throw new Error('Failed to fetch lead timeline logs');
+    }
+    return res.json();
   }
 };

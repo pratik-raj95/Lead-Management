@@ -1,4 +1,4 @@
-import { db } from '../db.js';
+import { googleSheetService } from '../services/googleSheetService.js';
 import { fetchMetaLead } from '../services/metaService.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
 
@@ -8,9 +8,7 @@ import { sendWhatsAppMessage } from '../services/whatsappService.js';
  */
 const validateAndScrubPhone = (phone) => {
   if (!phone) return null;
-  // Remove spaces, dashes, parentheses
   const scrubbed = phone.replace(/[\s\-\(\)\+]/g, '');
-  // Must be between 7 and 15 digits
   if (/^\d{7,15}$/.test(scrubbed)) {
     return scrubbed;
   }
@@ -18,37 +16,39 @@ const validateAndScrubPhone = (phone) => {
 };
 
 /**
- * Retrieve all leads from Google Sheets (or fallback database)
+ * Retrieve all leads from database
  */
 export const getLeads = async (req, res) => {
   try {
-    const leads = await db.getLeads();
+    const leads = await googleSheetService.getAllLeads();
     res.json(leads);
   } catch (error) {
+    console.error('[Controller Error] getLeads:', error.message);
     res.status(500).json({ error: 'Failed to retrieve leads from database' });
   }
 };
 
 /**
- * Update a lead (status, follow-up date, notes)
+ * Update a lead details
  */
 export const updateLead = async (req, res) => {
   const { id } = req.params;
   const { name, phone, source, status, followUpDate, notes } = req.body;
   try {
-    const updated = await db.updateLead(id, { name, phone, source, status, followUpDate, notes });
+    const updated = await googleSheetService.updateLead(id, { name, phone, source, status, followUpDate, notes });
     if (updated) {
       res.json(updated);
     } else {
       res.status(404).json({ error: 'Lead not found' });
     }
   } catch (error) {
+    console.error('[Controller Error] updateLead:', error.message);
     res.status(500).json({ error: 'Failed to update lead details' });
   }
 };
 
 /**
- * Unified webhook ingest endpoint (used by simulator and simple API integrations)
+ * Unified webhook ingest endpoint with duplicate detection & merge logging
  */
 export const ingestWebhook = async (req, res) => {
   const { phone, source, name, followUpDate, notes } = req.body;
@@ -69,13 +69,67 @@ export const ingestWebhook = async (req, res) => {
   }
 
   try {
-    const lead = await db.addOrUpdateLead(scrubbed, leadSource, name, followUpDate, notes);
+    const existing = await googleSheetService.findLeadByPhone(scrubbed);
+    
+    if (existing) {
+      // DUPLICATE DETECTED: Merge lead, update source and notes, log activity
+      const updatedNotes = existing.notes 
+        ? `${existing.notes}\n[Webhook Ingest] Duplicate merged. Source: ${leadSource}`
+        : `[Webhook Ingest] Duplicate merged. Source: ${leadSource}`;
+      
+      const newSource = existing.source.includes(leadSource) 
+        ? existing.source 
+        : `${existing.source}, ${leadSource}`;
+
+      const updated = await googleSheetService.updateLead(existing.id, {
+        notes: updatedNotes,
+        source: newSource,
+        name: name || existing.name
+      });
+
+      await googleSheetService.saveActivity(
+        existing.id,
+        scrubbed,
+        'Duplicate Merged',
+        existing.source,
+        newSource,
+        `Duplicate lead merged via webhook. Inflow source: ${leadSource}`,
+        'System'
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: 'Duplicate lead matched and merged.',
+        lead: updated
+      });
+    }
+
+    // Otherwise, create a new lead
+    const lead = await googleSheetService.createLead({
+      phone: scrubbed,
+      source: leadSource,
+      name: name || 'Contact',
+      followUpDate: followUpDate || null,
+      notes: notes || ''
+    });
+
+    await googleSheetService.saveActivity(
+      lead.id,
+      scrubbed,
+      'Webhook Received',
+      '',
+      leadSource,
+      `Webhook registration captured from ${leadSource}`,
+      'System'
+    );
+
     res.status(201).json({
       success: true,
       message: 'Lead processed successfully',
       lead
     });
   } catch (error) {
+    console.error('[Controller Error] ingestWebhook:', error.message);
     res.status(500).json({ error: 'Failed to process lead' });
   }
 };
@@ -86,12 +140,13 @@ export const ingestWebhook = async (req, res) => {
 export const getNotifications = async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const leads = await db.getLeads();
+    const leads = await googleSheetService.getAllLeads();
     const notifications = leads.filter(lead => {
       return lead.followUpDate === today && lead.status !== 'Not Interested';
     });
     res.json(notifications);
   } catch (error) {
+    console.error('[Controller Error] getNotifications:', error.message);
     res.status(500).json({ error: 'Failed to retrieve today\'s alerts' });
   }
 };
@@ -132,14 +187,50 @@ export const handleMetaWebhook = async (req, res) => {
         const leadgenId = changes.leadgen_id;
         console.log(`[Meta Webhook] Received leadgen_id: ${leadgenId}`);
 
-        // Fetch lead answers using Meta Developers Graph API
         const leadDetails = await fetchMetaLead(leadgenId);
         if (leadDetails && leadDetails.phone) {
           const scrubbed = validateAndScrubPhone(leadDetails.phone);
           if (scrubbed) {
             const timestamp = new Date().toISOString();
-            const notes = `[${timestamp}] Ingested from Facebook Leadgen ID: ${leadgenId}`;
-            await db.addOrUpdateLead(scrubbed, 'meta_ads', leadDetails.name, null, notes);
+            const logNotes = `[Meta Webhook] Ingested Facebook Lead ID: ${leadgenId}`;
+
+            const existing = await googleSheetService.findLeadByPhone(scrubbed);
+            if (existing) {
+              const updatedNotes = existing.notes ? `${existing.notes}\n[${timestamp}] ${logNotes}` : `[${timestamp}] ${logNotes}`;
+              const newSource = existing.source.includes('meta_ads') ? existing.source : `${existing.source}, meta_ads`;
+              
+              const updated = await googleSheetService.updateLead(existing.id, {
+                notes: updatedNotes,
+                source: newSource
+              });
+
+              await googleSheetService.saveActivity(
+                existing.id,
+                scrubbed,
+                'Duplicate Merged',
+                existing.source,
+                newSource,
+                `Duplicate lead merged via Meta Ads. Lead ID: ${leadgenId}`,
+                'System'
+              );
+            } else {
+              const lead = await googleSheetService.createLead({
+                phone: scrubbed,
+                source: 'meta_ads',
+                name: leadDetails.name || 'Contact',
+                notes: logNotes
+              });
+
+              await googleSheetService.saveActivity(
+                lead.id,
+                scrubbed,
+                'Meta Lead Imported',
+                '',
+                'meta_ads',
+                `Meta Lead Ad record imported. Leadgen ID: ${leadgenId}`,
+                'System'
+              );
+            }
           }
         }
       }
@@ -185,16 +276,52 @@ export const handleWhatsAppWebhook = async (req, res) => {
       const contact = value?.contacts?.[0];
 
       if (message) {
-        const phone = message.from; // Sender's phone number
+        const phone = message.from;
         const name = contact?.profile?.name || '';
         const bodyText = message.text?.body || '';
 
         const scrubbed = validateAndScrubPhone(phone);
         if (scrubbed) {
           const timestamp = new Date().toISOString();
-          const notes = `[${timestamp}] Incoming WhatsApp message: "${bodyText}"`;
+          const logNotes = `[WhatsApp Inflow] Incoming message: "${bodyText}"`;
           
-          await db.addOrUpdateLead(scrubbed, 'whatsapp', name, null, notes);
+          const existing = await googleSheetService.findLeadByPhone(scrubbed);
+          if (existing) {
+            const updatedNotes = existing.notes ? `${existing.notes}\n[${timestamp}] ${logNotes}` : `[${timestamp}] ${logNotes}`;
+            const newSource = existing.source.includes('whatsapp') ? existing.source : `${existing.source}, whatsapp`;
+
+            const updated = await googleSheetService.updateLead(existing.id, {
+              notes: updatedNotes,
+              source: newSource
+            });
+
+            await googleSheetService.saveActivity(
+              existing.id,
+              scrubbed,
+              'Duplicate Merged',
+              existing.source,
+              newSource,
+              `Duplicate lead merged via WhatsApp Message. Text: "${bodyText}"`,
+              'System'
+            );
+          } else {
+            const lead = await googleSheetService.createLead({
+              phone: scrubbed,
+              source: 'whatsapp',
+              name,
+              notes: logNotes
+            });
+
+            await googleSheetService.saveActivity(
+              lead.id,
+              scrubbed,
+              'Webhook Received',
+              '',
+              'whatsapp',
+              `WhatsApp lead registered via inbound message: "${bodyText}"`,
+              'System'
+            );
+          }
         }
       }
     } catch (err) {
@@ -215,8 +342,7 @@ export const sendLeadWhatsApp = async (req, res) => {
   }
 
   try {
-    const leads = await db.getLeads();
-    const lead = leads.find(l => l.id === id);
+    const lead = await googleSheetService.getLead(id);
 
     if (!lead) {
       return res.status(404).json({ error: 'Lead not found.' });
@@ -224,18 +350,30 @@ export const sendLeadWhatsApp = async (req, res) => {
 
     const result = await sendWhatsAppMessage(lead.phone, message);
     if (result.success) {
-      // Append event record to activity history notes
       const timestamp = new Date().toISOString();
       const updatedNotes = lead.notes 
         ? `${lead.notes}\n[${timestamp}] Outgoing WhatsApp sent: "${message}"` 
         : `[${timestamp}] Outgoing WhatsApp sent: "${message}"`;
       
-      const updatedLead = await db.updateLead(id, { notes: updatedNotes });
+      const updatedLead = await googleSheetService.updateLead(id, { notes: updatedNotes });
+
+      // LOG ACTIVITY: Outgoing WhatsApp Sent
+      await googleSheetService.saveActivity(
+        id,
+        lead.phone,
+        'WhatsApp Message Sent',
+        '',
+        '',
+        `Outgoing message sent: "${message}"`,
+        'System'
+      );
+
       res.json({ success: true, lead: updatedLead });
     } else {
       res.status(500).json({ error: result.error || 'Failed to dispatch WhatsApp message.' });
     }
   } catch (error) {
+    console.error('[Controller Error] sendLeadWhatsApp:', error.message);
     res.status(500).json({ error: 'Server encountered error dispatching message.' });
   }
 };
@@ -249,13 +387,11 @@ export const handleGoogleAdsWebhook = async (req, res) => {
 
   const serverKey = process.env.GOOGLE_ADS_KEY || 'crm_google_key';
 
-  // 1. Authenticate secret key sent by Google Ads configuration
   if (google_key !== serverKey) {
     return res.status(401).json({ error: 'Unauthorized google_key' });
   }
 
   try {
-    // 2. Parse column data array to extract the lead fields
     let phone = '';
     let name = '';
 
@@ -275,11 +411,51 @@ export const handleGoogleAdsWebhook = async (req, res) => {
     }
 
     const timestamp = new Date().toISOString();
-    const notes = `[${timestamp}] Ingested from Google Ads Lead Form ID: ${body.lead_id || 'unknown'}`;
+    const logNotes = `[Google Ads] Ingested Google Ads Form ID: ${body.lead_id || 'unknown'}`;
     
-    const lead = await db.addOrUpdateLead(scrubbed, 'google_ads', name, null, notes);
-    res.status(201).json({ success: true, lead });
+    const existing = await googleSheetService.findLeadByPhone(scrubbed);
+    if (existing) {
+      const updatedNotes = existing.notes ? `${existing.notes}\n[${timestamp}] ${logNotes}` : `[${timestamp}] ${logNotes}`;
+      const newSource = existing.source.includes('google_ads') ? existing.source : `${existing.source}, google_ads`;
+      
+      const updated = await googleSheetService.updateLead(existing.id, {
+        notes: updatedNotes,
+        source: newSource
+      });
+
+      await googleSheetService.saveActivity(
+        existing.id,
+        scrubbed,
+        'Duplicate Merged',
+        existing.source,
+        newSource,
+        `Duplicate lead merged via Google Ads Form ID: ${body.lead_id || 'unknown'}`,
+        'System'
+      );
+
+      res.status(200).json({ success: true, lead: updated });
+    } else {
+      const lead = await googleSheetService.createLead({
+        phone: scrubbed,
+        source: 'google_ads',
+        name,
+        notes: logNotes
+      });
+
+      await googleSheetService.saveActivity(
+        lead.id,
+        scrubbed,
+        'Google Ads Lead Imported',
+        '',
+        'google_ads',
+        `Google Ads Form lead registered. Form ID: ${body.lead_id || 'unknown'}`,
+        'System'
+      );
+
+      res.status(201).json({ success: true, lead });
+    }
   } catch (err) {
+    console.error('[Google Ads Webhook Error]:', err.message);
     res.status(500).json({ error: 'Failed to process Google Ads webhook event.' });
   }
 };
@@ -290,14 +466,60 @@ export const handleGoogleAdsWebhook = async (req, res) => {
 export const deleteLead = async (req, res) => {
   const { id } = req.params;
   try {
-    const deleted = await db.deleteLead(id);
+    const deleted = await googleSheetService.deleteLead(id);
     if (deleted) {
       res.json({ success: true, message: 'Lead deleted successfully' });
     } else {
       res.status(404).json({ error: 'Lead not found' });
     }
   } catch (error) {
+    console.error('[Controller Error] deleteLead:', error.message);
     res.status(500).json({ error: 'Failed to delete lead from database' });
   }
 };
 
+/**
+ * Get lead activity timeline
+ */
+export const getLeadTimeline = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const timeline = await googleSheetService.getLeadTimeline(id);
+    res.json(timeline);
+  } catch (error) {
+    console.error('[Controller Error] getLeadTimeline:', error.message);
+    res.status(500).json({ error: 'Failed to retrieve timeline logs' });
+  }
+};
+
+/**
+ * Manually create a new lead
+ */
+export const createLead = async (req, res) => {
+  try {
+    const { name, phone, source, status, followUpDate, notes } = req.body;
+    const scrubbed = validateAndScrubPhone(phone);
+    if (!scrubbed) {
+      return res.status(400).json({ error: 'Invalid or missing phone number.' });
+    }
+
+    const existing = await googleSheetService.findLeadByPhone(scrubbed);
+    if (existing) {
+      return res.status(409).json({ error: 'A lead with this phone number already exists.' });
+    }
+
+    const lead = await googleSheetService.createLead({
+      name,
+      phone: scrubbed,
+      source: source || 'manual',
+      status: status || 'New Leads',
+      followUpDate,
+      notes
+    });
+
+    res.status(201).json(lead);
+  } catch (error) {
+    console.error('[Controller Error] createLead:', error.message);
+    res.status(500).json({ error: 'Failed to create lead.' });
+  }
+};

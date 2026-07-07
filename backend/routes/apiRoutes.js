@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getLeads,
+  createLead,
   updateLead,
   deleteLead,
   ingestWebhook,
@@ -10,7 +11,8 @@ import {
   verifyWhatsAppWebhook,
   handleWhatsAppWebhook,
   sendLeadWhatsApp,
-  handleGoogleAdsWebhook
+  handleGoogleAdsWebhook,
+  getLeadTimeline
 } from '../controllers/leadController.js';
 import { login } from '../controllers/authController.js';
 import { authenticateToken } from '../middleware/auth.js';
@@ -22,9 +24,13 @@ router.post('/login', login);
 
 // Protected CRM core routes
 router.get('/leads', authenticateToken, getLeads);
+router.post('/leads', authenticateToken, createLead);
 router.put('/leads/:id', authenticateToken, updateLead);
 router.delete('/leads/:id', authenticateToken, deleteLead);
 router.get('/notifications', authenticateToken, getNotifications);
+
+// Lead Activity History timeline logs
+router.get('/leads/:id/timeline', authenticateToken, getLeadTimeline);
 
 // Protected outgoing message channel dispatch
 router.post('/leads/:id/message', authenticateToken, sendLeadWhatsApp);

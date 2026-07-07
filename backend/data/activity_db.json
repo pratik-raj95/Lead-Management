@@ -1,0 +1,101 @@
+[
+  {
+    "activityId": "act_1783422519148_76",
+    "leadId": "lead_1783422519143_320",
+    "phone": "9999481562",
+    "activityType": "Lead Created",
+    "oldValue": "",
+    "newValue": "New Leads",
+    "description": "Lead generated via meta_ads",
+    "performedBy": "System",
+    "timestamp": "2026-07-07T11:08:39.148Z"
+  },
+  {
+    "activityId": "act_1783422519153_12",
+    "leadId": "lead_1783422519143_320",
+    "phone": "9999481562",
+    "activityType": "Webhook Received",
+    "oldValue": "",
+    "newValue": "meta_ads",
+    "description": "Webhook registration captured from meta_ads",
+    "performedBy": "System",
+    "timestamp": "2026-07-07T11:08:39.153Z"
+  },
+  {
+    "activityId": "act_1783422708239_89",
+    "leadId": "lead_1783422708235_712",
+    "phone": "9988655891",
+    "activityType": "Lead Created",
+    "oldValue": "",
+    "newValue": "New Leads",
+    "description": "Lead generated via google_ads",
+    "performedBy": "System",
+    "timestamp": "2026-07-07T11:11:48.239Z"
+  },
+  {
+    "activityId": "act_1783422708244_327",
+    "leadId": "lead_1783422708235_712",
+    "phone": "9988655891",
+    "activityType": "Webhook Received",
+    "oldValue": "",
+    "newValue": "google_ads",
+    "description": "Webhook registration captured from google_ads",
+    "performedBy": "System",
+    "timestamp": "2026-07-07T11:11:48.244Z"
+  },
+  {
+    "activityId": "act_1783423173266_223",
+    "leadId": "lead_1",
+    "phone": "9876543210",
+    "activityType": "Notes Updated",
+    "oldValue": "",
+    "newValue": "",
+    "description": "Timeline notes updated",
+    "performedBy": "System",
+    "timestamp": "2026-07-07T11:19:33.266Z"
+  },
+  {
+    "activityId": "act_1783423173276_672",
+    "leadId": "lead_1",
+    "phone": "9876543210",
+    "activityType": "Duplicate Merged",
+    "oldValue": "meta_ads",
+    "newValue": "meta_ads",
+    "description": "Duplicate lead merged via webhook. Inflow source: meta_ads",
+    "performedBy": "System",
+    "timestamp": "2026-07-07T11:19:33.276Z"
+  },
+  {
+    "activityId": "act_1783423173294_932",
+    "leadId": "lead_1",
+    "phone": "9876543210",
+    "activityType": "Notes Updated",
+    "oldValue": "",
+    "newValue": "",
+    "description": "Timeline notes updated",
+    "performedBy": "System",
+    "timestamp": "2026-07-07T11:19:33.294Z"
+  },
+  {
+    "activityId": "act_1783423173303_303",
+    "leadId": "lead_1",
+    "phone": "9876543210",
+    "activityType": "Duplicate Merged",
+    "oldValue": "meta_ads",
+    "newValue": "meta_ads, google_ads",
+    "description": "Duplicate lead merged via webhook. Inflow source: google_ads",
+    "performedBy": "System",
+    "timestamp": "2026-07-07T11:19:33.303Z"
+  },
+  {
+    "activityId": "act_1783423173347_442",
+    "leadId": "lead_1",
+    "phone": "9876543210",
+    "activityType": "Lead Deleted",
+    "oldValue": "Interested",
+    "newValue": "",
+    "description": "Lead records removed from database",
+    "performedBy": "System",
+    "timestamp": "2026-07-07T11:19:33.347Z"
+  }
+]

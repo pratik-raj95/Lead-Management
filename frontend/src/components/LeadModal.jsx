@@ -17,6 +17,10 @@ export default function LeadModal({ lead, isOpen, onClose, onSave, onDelete }) {
   const [sendingWs, setSendingWs] = useState(false);
   const [wsStatus, setWsStatus] = useState('');
 
+  // Structured Timeline state
+  const [timeline, setTimeline] = useState([]);
+  const [loadingTimeline, setLoadingTimeline] = useState(false);
+
   // Sync state with open/close and selected lead
   useEffect(() => {
     if (lead) {
@@ -28,7 +32,26 @@ export default function LeadModal({ lead, isOpen, onClose, onSave, onDelete }) {
       setError('');
       setWsMessage('');
       setWsStatus('');
+      setTimeline([]);
     }
+  }, [lead, isOpen]);
+
+  // Load activity history timeline list from Sheets/fallback API on mount or refresh
+  const loadTimeline = async () => {
+    if (!lead?.id || !isOpen) return;
+    setLoadingTimeline(true);
+    try {
+      const logs = await crmApi.getLeadTimeline(lead.id);
+      setTimeline(logs);
+    } catch (err) {
+      console.error('[Timeline Load Error]:', err.message);
+    } finally {
+      setLoadingTimeline(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTimeline();
   }, [lead, isOpen]);
 
   if (!isOpen || !lead) return null;
@@ -63,14 +86,11 @@ export default function LeadModal({ lead, isOpen, onClose, onSave, onDelete }) {
     setSendingWs(true);
     setWsStatus('');
     try {
-      const res = await crmApi.sendWhatsApp(lead.id, wsMessage.trim());
+      await crmApi.sendWhatsApp(lead.id, wsMessage.trim());
       setWsStatus('Sent successfully!');
       setWsMessage('');
-      
-      // Update modal local lead notes so it appears in feed immediately
-      if (res.lead && res.lead.notes) {
-        lead.notes = res.lead.notes;
-      }
+      // Reload timeline logs dynamically to show message history instantly
+      await loadTimeline();
     } catch (err) {
       console.error(err);
       setWsStatus(`Error: ${err.message}`);
@@ -79,18 +99,14 @@ export default function LeadModal({ lead, isOpen, onClose, onSave, onDelete }) {
     }
   };
 
-  // Split notes by newline to render activity logs
-  const activityLogs = lead.notes 
-    ? lead.notes.split('\n').filter(log => log.trim() !== '') 
-    : [];
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-4xl border border-slate-100 overflow-hidden transform transition-all duration-300 flex flex-col max-h-[90vh]">
+        
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/55">
           <div>
-            <h3 className="font-bold text-slate-800 text-base">Lead details & Timeline</h3>
+            <h3 className="font-bold text-slate-800 text-sm tracking-tight">Lead details & Timeline</h3>
             <p className="text-[10px] text-slate-400 mt-0.5">ID: {lead.id} | Created: {formatDateTime(lead.createdDate)}</p>
           </div>
           <button 
@@ -235,23 +251,40 @@ export default function LeadModal({ lead, isOpen, onClose, onSave, onDelete }) {
           {/* Right Column: Timeline & WhatsApp Outbox */}
           <div className="p-6 flex flex-col justify-between space-y-6 bg-slate-50/30">
             {/* Timeline Log */}
-            <div className="flex-1 flex flex-col min-h-[250px]">
+            <div className="flex-1 flex flex-col min-h-[260px]">
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
                 Activity Timeline
               </h4>
               
               <div className="flex-1 overflow-y-auto max-h-[300px] border border-slate-100 rounded-2xl bg-white p-4 space-y-3.5 shadow-inner">
-                {activityLogs.length > 0 ? (
-                  activityLogs.map((log, index) => (
-                    <div key={index} className="text-xs text-slate-600 leading-relaxed border-l-2 border-crm-500 pl-3 py-0.5">
-                      {log}
+                {loadingTimeline ? (
+                  <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-400 text-xs">
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    <span>Loading logs...</span>
+                  </div>
+                ) : timeline.length > 0 ? (
+                  timeline.map((act) => (
+                    <div key={act.activityId} className="text-xs text-slate-650 leading-relaxed border-l-2 border-crm-500 pl-3 py-1 flex flex-col gap-0.5">
+                      <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase">
+                        <span>{act.activityType}</span>
+                        <span>{formatDateTime(act.timestamp)}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-700 font-semibold">{act.description}</p>
+                      
+                      {(act.oldValue || act.newValue) && (
+                        <div className="text-[9px] text-slate-500 font-semibold flex gap-1 items-center mt-0.5">
+                          <span className="line-through text-slate-400">{act.oldValue || 'None'}</span>
+                          <span>&rarr;</span>
+                          <span className="text-crm-600 font-bold">{act.newValue}</span>
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (
                   <div className="flex items-center gap-1.5 text-slate-400 text-xs py-8 justify-center italic">
                     <Info className="w-4 h-4" />
-                    No communication logs yet.
+                    No activities logged yet.
                   </div>
                 )}
               </div>

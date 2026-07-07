@@ -1,66 +1,71 @@
-# Google Sheets API Integration Setup
+# Google Sheets Database Setup Guide
 
-This document explains how to set up the Google Sheets integration for your CRM database, configure your service account, and explains how duplicate detection works.
-
----
-
-## 1. Sheet Setup Walkthrough
-
-1. **Spreadsheet creation**:
-   - Create a Google Sheet.
-   - Note the **Spreadsheet ID** from the browser address bar.
-2. **Enable APIs**:
-   - Go to Google Cloud Console, enable **Google Sheets API**.
-3. **Create Service Account credentials**:
-   - Create a service account under **Credentials**.
-   - Create a JSON Key file, download it, and extract the email address and private key.
-4. **Share Spreadsheet permissions**:
-   - Open your Google Sheet, click **Share**, add the service account email, and select **Editor**.
+This guide explains how to link the LeadFlow CRM to Google Sheets as its primary database.
 
 ---
 
-## 2. Syncing Google Sheets with the CRM Dashboard
+## 1. Create your Google Spreadsheet
 
-When the Express backend loads, it authorizes with Google and queries the spreadsheet rows.
-- **Header Row**: If the sheet is empty, the CRM automatically initializes the following columns in row 1:
-  `id | name | phone | source | status | createdDate | followUpDate | lastUpdated | notes`
-- **Lead Mapping**: When the client loads the CRM dashboard, the backend fetches all rows from row 2 onwards and parses them into JSON objects. The frontend useLeads hook polls this list every 4 seconds, reflecting changes instantly in the UI.
+1. Open [Google Sheets](https://sheets.google.com) and create a **blank spreadsheet**.
+2. Name your spreadsheet (e.g., `LeadFlow CRM Database`).
+3. Take note of the **Spreadsheet ID** from the URL. The ID is the long string of characters between `/d/` and `/edit` in your browser URL:
+   `https://docs.google.com/spreadsheets/d/SPREADSHEET_ID_HERE/edit`
 
 ---
 
-## 3. Duplicate Detection & Ingestion Logic
+## 2. Share the Spreadsheet with your Service Account
 
-The CRM employs a strict unique constraint check on the `phone` field:
+For the backend to write to the spreadsheet, you must grant access:
+1. Click the **Share** button in the top right of your Google Sheet.
+2. Add your Service Account email (e.g., `crm-service-account@your-project-id.iam.gserviceaccount.com`).
+3. Set the permission role to **Editor**.
+4. Uncheck "Notify people" and click **Share**.
 
+---
+
+## 3. Spreadsheet Column Layouts
+
+The application expects two sheets (tabs) inside your spreadsheet: `Sheet1` and `Sheet2`. 
+
+If they do not exist or are empty, the backend will **automatically initialize them** on startup. Below are their column mappings:
+
+### Sheet 1: `Sheet1` (Lead Database)
+The leads table tracks active contact records and pipeline states:
+
+* **Column A**: `Lead ID` (Primary key, auto-generated)
+* **Column B**: `Name`
+* **Column C**: `Phone Number` (Scrubbed digits)
+* **Column D**: `Source` (Meta Ads, Google Ads, WhatsApp, etc.)
+* **Column E**: `Status` (Pipeline state: New Leads, Interested, Follow Up, Not Interested)
+* **Column F**: `Follow Up Date` (ISO Date string `YYYY-MM-DD`)
+* **Column G**: `Created At` (ISO Date string)
+* **Column H**: `Updated At` (ISO Date string)
+* **Column I**: `Notes` (Communication summary updates)
+
+### Sheet 2: `Sheet2` (Lead Activity History)
+This table acts as a structured transaction ledger capturing chronological logs of actions associated with lead IDs:
+
+* **Column A**: `Activity ID` (Primary key)
+* **Column B**: `Lead ID` (Foreign key linking to Sheet 1)
+* **Column C**: `Phone Number`
+* **Column D**: `Activity Type` (e.g. Lead Created, Status Changed, WhatsApp Sent)
+* **Column E**: `Old Value`
+* **Column F**: `New Value`
+* **Column G**: `Description` (Action breakdown details)
+* **Column H**: `Performed By` (Author: System, User, Admin)
+* **Column I**: `Timestamp` (ISO Date string)
+
+---
+
+## 4. Declare Environment Variables
+
+Declare the variables in your backend `.env` file (local development) or platform dashboard settings (Render production web service):
+
+```env
+# Google service credentials
+GOOGLE_SERVICE_ACCOUNT_EMAIL=your-service-account@project.iam.gserviceaccount.com
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC..."
+GOOGLE_SHEET_ID=your_spreadsheet_url_id
 ```
-Inbound Lead (Phone)
-       ↓
-Search Google Sheet for matching Phone column
-       ↓
-  [Phone Found?]
-   ├── Yes ──> Update the existing Sheet row (updates name/source/followUpDate)
-   │           Append a new event string to the "notes" column (Activity History log)
-   │
-   └── No  ──> Append a new row to the Sheet
-               Status = "New Leads"
-               createdDate = Current Timestamp
-```
 
-### Advantages:
-- Prevents database bloating from repeating Meta/Google ad-clicks.
-- Preserves historical records. Notes column acts as an append-only timeline log.
-
----
-
-## 4. Google Sheets n8n Flow Configuration
-
-If using n8n to sync leads to Google Sheets:
-1. In your n8n workspace, add a **Google Sheets** node.
-2. Configure **Action** = `Append or Update Row`.
-3. Set **Resource** = `Row`.
-4. Enter your spreadsheet ID.
-5. Set **Key Column** = `phone` (Google Sheets node will automatically locate matching rows on the phone column and perform an UPDATE if found, or APPEND a new row if missing).
-6. Map inputs:
-   - `phone` = `{{ $json.phone }}`
-   - `source` = `meta_ads` (or ads source)
-   - `notes` = `[Timestamp] Ingested via n8n integration`
+*Note: If these variables are not found or authentication fails, the application automatically falls back to local storage (`backend/data/db.json` and `backend/data/activity_db.json`) keeping the CRM operational.*
