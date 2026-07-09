@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, UserCheck, UserMinus, Calendar, Bell, ArrowRight, Play, CheckCircle2, AlertTriangle, PhoneCall } from 'lucide-react';
+import { Users, UserCheck, UserMinus, Calendar, Bell, Play, CheckCircle2, AlertTriangle, PhoneCall } from 'lucide-react';
 import { isDateToday, formatDate } from '../utils/dateFormatter';
 import { crmApi } from '../api/crmApi';
 
@@ -48,7 +48,7 @@ export default function Dashboard({ leads, refreshLeads, onEditLead }) {
     const phone = generateRandomPhone();
     
     try {
-      const res = await crmApi.simulateWebhook(phone, source);
+      await crmApi.simulateWebhook(phone, source);
       setSimRes({
         success: true,
         source,

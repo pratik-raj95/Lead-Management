@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Phone, Share2, MessageSquare, ExternalLink, CalendarClock } from 'lucide-react';
+import { Calendar, Phone, CalendarClock } from 'lucide-react';
 import { formatDate, isDateToday } from '../utils/dateFormatter';
 
 export default function LeadCard({ lead, onEdit }) {

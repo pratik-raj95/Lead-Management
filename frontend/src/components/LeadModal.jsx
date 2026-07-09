@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Calendar, Phone, Check, RefreshCw, MessageSquare, Send, User, Clock, Info } from 'lucide-react';
 import { formatDateTime } from '../utils/dateFormatter';
 import { crmApi } from '../api/crmApi';
@@ -37,7 +37,7 @@ export default function LeadModal({ lead, isOpen, onClose, onSave, onDelete }) {
   }, [lead, isOpen]);
 
   // Load activity history timeline list from Sheets/fallback API on mount or refresh
-  const loadTimeline = async () => {
+  const loadTimeline = useCallback(async () => {
     if (!lead?.id || !isOpen) return;
     setLoadingTimeline(true);
     try {
@@ -48,11 +48,11 @@ export default function LeadModal({ lead, isOpen, onClose, onSave, onDelete }) {
     } finally {
       setLoadingTimeline(false);
     }
-  };
+  }, [lead, isOpen]);
 
   useEffect(() => {
     loadTimeline();
-  }, [lead, isOpen]);
+  }, [loadTimeline]);
 
   if (!isOpen || !lead) return null;
 
@@ -214,7 +214,7 @@ export default function LeadModal({ lead, isOpen, onClose, onSave, onDelete }) {
                       try {
                         await onDelete(lead.id);
                         onClose();
-                      } catch (err) {
+                      } catch {
                         setError('Failed to delete lead.');
                       } finally {
                         setSubmitting(false);

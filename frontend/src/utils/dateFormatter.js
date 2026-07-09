@@ -13,7 +13,7 @@ export function formatDate(dateString) {
       month: 'long',
       year: 'numeric'
     });
-  } catch (e) {
+  } catch {
     return dateString;
   }
 }
@@ -33,7 +33,7 @@ export function formatDateTime(isoString) {
       minute: '2-digit',
       hour12: true
     });
-  } catch (e) {
+  } catch {
     return isoString;
   }
 }

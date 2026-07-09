@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Columns, Bell, Zap, LogOut, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, Columns, Bell, Zap, LogOut } from 'lucide-react';
 import { useLeads } from './hooks/useLeads';
 import { isDateToday } from './utils/dateFormatter';
 import Dashboard from './pages/Dashboard';

@@ -12,7 +12,7 @@ CRM/
 │   ├── public/                 # Static asset directories
 │   ├── src/                    # React source root
 │   │   ├── api/
-│   │   │   └── crmApi.js       # Client client library (fetch-based with WhatsApp outbox)
+│   │   │   └── crmApi.js       # Client API library (fetch-based with WhatsApp outbox)
 │   │   ├── components/
 │   │   │   ├── KanbanBoard.jsx # Kanban pipeline grid controller
 │   │   │   ├── LeadCard.jsx    # Lead card component showing Name & Phone
@@ -21,9 +21,11 @@ CRM/
 │   │   │   └── useLeads.js     # Global state engine, polling, & optimistic UI updates
 │   │   ├── pages/
 │   │   │   ├── Dashboard.jsx   # Overview metrics, alarms, & webhook simulators
+│   │   │   ├── Login.jsx       # SaaS-style login and session auto-logout component
 │   │   │   └── Pipeline.jsx    # Kanban page wrapper
 │   │   ├── utils/
 │   │   │   └── dateFormatter.js# String date conversion utilities
+│   │   ├── App.css             # Component-level styles
 │   │   ├── App.jsx             # Main routing shell
 │   │   ├── index.css           # Global layout styling (Tailwind imports)
 │   │   └── main.jsx            # Entry point mounting React DOM
@@ -38,37 +40,40 @@ CRM/
 │   └── vite.config.js          # Vite compiler settings
 │
 ├── backend/                    # Server-Side Application (Express.js API Node)
+│   ├── config/
+│   │   └── googleSheets.js     # Google Sheets JWT connection configuration
 │   ├── controllers/            # Route business logic handlers
+│   │   ├── authController.js   # JWT sign, login authentication endpoints
 │   │   └── leadController.js   # Lead, Meta verification, WhatsAppCloud hooks, & Google Ads webhook
-│   ├── data/                   # Database files
+│   ├── data/                   # Fallback database files
+│   │   ├── activity_db.json    # Local activity history fallback json database
 │   │   └── db.json             # Backup fallback local JSON database
 │   ├── middleware/             # Express mid-route filters
+│   │   ├── auth.js             # Token verification and JWT protection
 │   │   └── logger.js           # Logger middleware
 │   ├── routes/                 # Endpoint path routing configuration
 │   │   └── apiRoutes.js        # Express paths mapping
 │   ├── services/               # Integrations API services
+│   │   ├── googleSheetService.js # Google sheets core operation functions
 │   │   ├── metaService.js      # Meta Graph API fetch service
 │   │   └── whatsappService.js  # WhatsApp Cloud API messaging service
-│   ├── utils/                  # Backend utilities (placeholder)
-│   ├── .env.example            # Backend env template (PORT)
+│   ├── utils/
+│   │   └── .gitkeep            # Utilities placeholder
+│   ├── .env                    # Backend environment config (PORT, Google Keys)
+│   ├── .env.example            # Backend env template
 │   ├── .gitignore              # Server specific git exclude rules
-│   ├── db.js                   # Google Sheets auth JWT manager
+│   ├── db.js                   # Alternative fallback JSON database layer
 │   ├── package.json            # Server package dependencies
 │   ├── render.yaml             # Render deployment configuration parameters
 │   └── server.js               # Express application listener startup
 │
-├── backup/                     # Safety backup archive folder
-│   ├── src/                    # Pre-refactoring React files
-│   ├── public/                 # Pre-refactoring assets
-│   ├── backend_src/            # Pre-refactoring backend server files
-│   └── ...
-│
 ├── .env.example                # Root environment variables template
 ├── .gitignore                  # Root Git ignore rules
+├── .oxlintrc.json              # Oxlint lint rules config
 ├── DEPLOYMENT_CHECKLIST.md     # Pre-flight deployment checklist
 ├── DEPLOYMENT_GUIDE.md         # Multi-platform deployment handbook
-├── PROJECT_STRUCTURE.md        # Folder structure documentation (this file)
-└── README.md                   # CRM user manual & installation guide
+├── README.md                   # CRM user manual & installation guide
+└── vercel.json                 # Vercel deployment settings for monorepo redirects
 ```
 
 ---
